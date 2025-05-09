@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recyclable Materials Checker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #e8f5e9;
+      color: #2e7d32;
+      text-align: center;
+      padding: 30px 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+    }
+    .logo {
+      width: 100px;
+      animation: spin 10s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    h1 {
+      color: #1b5e20;
+      font-size: 28px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px 5px;
+      font-size: 16px;
+      border: 2px solid #2e7d32;
+      border-radius: 5px;
+      width: 90%;
+      max-width: 300px;
+    }
+    button {
+      background-color: #66bb6a;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #388e3c;
+    }
+    .box {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0, 100, 0, 0.15);
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 16px;
+      color: #388e3c;
+    }
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 24px;
+      }
+      input, button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- ✅ Spinning recycling logo (not a bin) -->
+    <img src="https://cdn-icons-png.flaticon.com/512/61/61456.png" alt="Recycling Logo" class="logo">
+
+    <div class="box">
+      <h1>♻️ Recyclable Materials Checker</h1>
+      <p>Enter a material to check if it's recyclable!</p>
+      <input type="text" id="materialInput" placeholder="e.g. glass, plastic bags">
+      <button onclick="checkMaterial()">Check</button>
+      <div id="result"></div>
+    </div>
+
+    <div class="footer">
+      🌱 Let's work together to protect the planet by recycling the right materials! 🌍
+    </div>
+  </div>
+
+  <script>
+    const materials = {
+      "paper": true, "cardboard": true, "glass": true, "plastic": true, "metal": true,
+      "aluminum": true, "steel": true, "electronics": true, "tin cans": true,
+      "newspaper": true, "magazines": true, "plastic bottles": true, "plastic containers": true,
+      "envelopes": true, "books": true, "junk mail": true, "printer paper": true,
+      "office paper": true, "brown paper bags": true, "phone books": true,
+      "clear glass bottles": true, "green glass bottles": true, "blue glass bottles": true,
+      "soda cans": true, "aluminum foil (clean)": true, "scrap metal": true,
+      "corrugated cardboard": true,
+      "batteries": false, "styrofoam": false, "ceramics": false, "food waste": false,
+      "clothing": false, "wood": false, "light bulbs": false, "mirrors": false,
+      "plastic bags": true, "chip bags": false, "wax paper": false, "used tissues": true,
+      "greasy food wrappers": false, "broken glass": false, "window glass": false,
+      "pizza boxes (greasy)": false, "diapers": false, "rubber": false,
+      "garden hoses": false, "propane tanks": false, "aerosol cans (full)": false,
+      "motor oil containers": false, "paint cans (with paint)": false,
+      "chemical containers": false, "plastic utensils": true, "foam cups": false,
+      "foam containers": false, "hair": false, "pet waste": false,
+      "vacuum cleaner bags": false 
+    };
+
+    function getClosestMatch(input) {
+      input = input.toLowerCase();
+      let bestMatch = "";
+      let bestScore = 0;
+
+      for (let key in materials) {
+        let score = similarity(input, key);
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = key;
+        }
+      }
+      return bestScore > 0.6 ? bestMatch : null;
+    }
+
+    function similarity(a, b) {
+      let longer = a.length > b.length ? a : b;
+      let shorter = a.length > b.length ? b : a;
+      let longerLength = longer.length;
+      if (longerLength === 0) return 1.0;
+      return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
+    }
+
+    function editDistance(s1, s2) {
+      s1 = s1.toLowerCase();
+      s2 = s2.toLowerCase();
+
+      let costs = [];
+      for (let i = 0; i <= s1.length; i++) {
+        let lastValue = i;
+        for (let j = 0; j <= s2.length; j++) {
+          if (i === 0)
+            costs[j] = j;
+          else {
+            if (j > 0) {
+              let newValue = costs[j - 1];
+              if (s1.charAt(i - 1) !== s2.charAt(j - 1))
+                newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+              costs[j - 1] = lastValue;
+              lastValue = newValue;
+            }
+          }
+        }
+        if (i > 0)
+          costs[s2.length] = lastValue;
+      }
+      return costs[s2.length];
+    }
+
+    function checkMaterial() {
+      const input = document.getElementById("materialInput").value.trim().toLowerCase();
+      const result = document.getElementById("result");
+
+      if (materials.hasOwnProperty(input)) {
+        const isRecyclable = materials[input];
+        result.innerHTML = `${isRecyclable ? '✅ Yes' : '❌ No'}, "${input}" is ${isRecyclable ? 'recyclable' : 'not recyclable'}.`;
+      } else {
+        const suggestion = getClosestMatch(input);
+        if (suggestion) {
+          const isRecyclable = materials[suggestion];
+          result.innerHTML = `❓ Did you mean "<strong>${suggestion}</strong>"?<br>${isRecyclable ? '✅ Yes' : '❌ No'}, it is ${isRecyclable ? 'recyclable' : 'not recyclable'}.`;
+        } else {
+          result.innerHTML = `❌ Material "${input}" not found. Only specific materials allowed.`;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
